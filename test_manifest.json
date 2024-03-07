@@ -1,0 +1,12 @@
+{
+  "fee_rate": 5,
+  "anchor_address": "bcrt1qy0magn4hyrtat585cdjh93yvz8dtmypcjrw76a",
+  "funding_outpoint": "b4ddc7d7dfcce0d2b8b3d7720227b284942727746ea71a77ccb2fba3d5c0725c:0",
+  "transfers" : [
+    {
+      "outpoint":  "6f8688faa9190db47983536df7fd4be0726325aaebd151c620109e28532a9ad6:0",
+      "address": "bcrt1qy0magn4hyrtat585cdjh93yvz8dtmypcjrw76a",
+      "amount": 546
+    }
+  ]
+}

@@ -1,6 +1,6 @@
-use bitcoin::{OutPoint};
-use serde::{Deserialize, Serialize};
 use anyhow::Result;
+use bitcoin::OutPoint;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Manifest {
@@ -9,7 +9,6 @@ pub(crate) struct Manifest {
     pub(crate) anchor_address: String,
     pub(crate) transfers: Vec<Transfer>,
 }
-
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Transfer {

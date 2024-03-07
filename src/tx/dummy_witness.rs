@@ -22,7 +22,6 @@ lazy_static! {
         witness.push(script.to_bytes());
         witness
     };
-
     static ref FAKE_SINGLESIG_TAPROOT_WITNESS: Vec<Vec<u8>> = {
         let fake_signature = [0u8; 64];
         let mut witness = Vec::new();
@@ -34,21 +33,20 @@ lazy_static! {
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) enum WalletType {
     SingleSigTaproot,
-    MultiSigSegwit{threshold: u8, max: u8},
+    MultiSigSegwit { threshold: u8, max: u8 },
 }
 
 impl WalletType {
     pub(crate) fn dummy_witness(&self) -> Vec<Vec<u8>> {
         match self {
             WalletType::SingleSigTaproot => FAKE_SINGLESIG_TAPROOT_WITNESS.clone(),
-            WalletType::MultiSigSegwit{threshold, max} => {
+            WalletType::MultiSigSegwit { threshold, max } => {
                 if *threshold != 2 || *max != 3 {
                     // TODO: support other multisig configurations
                     panic!("Only 2-of-3 multisig is supported");
                 }
                 FAKE_2_OF_3_WITNESS.clone()
-            },
+            }
         }
-
     }
 }

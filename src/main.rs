@@ -1,9 +1,12 @@
-mod tx;
 mod settings;
+mod tx;
 
-use anyhow::Result;
-use clap::Parser;
 use crate::settings::Settings;
+use anyhow::Result;
+use base64::engine::general_purpose;
+use base64::Engine;
+use clap::Parser;
+use std::io::Write;
 
 #[derive(Parser)]
 struct Cli {
@@ -20,28 +23,36 @@ enum Action {
     EstimateFee { manifest: String },
 }
 
-
-fn main() -> Result<()>{
+fn main() -> Result<()> {
     let cli = Cli::parse();
-    let settings_path = cli.settings.clone().unwrap_or("settings.json".to_string());
-    let settings = match settings::from_json_file(&settings_path) {
+    let settings_path = cli.settings.clone().unwrap_or("settings.toml".to_string());
+    let settings = match settings::from_toml_file(&settings_path) {
         Ok(settings) => settings,
         Err(_) => {
             let settings = Settings::default();
             println!("Writing default settings to {settings_path}");
-            settings::to_json_file(&settings, &settings_path)?;
+            settings::to_toml_file(&settings, &settings_path)?;
             settings
         }
     };
-    
+
     match cli.action {
-        Action::MakeTx { manifest } => {
-            let manifest = tx::manifest::Manifest::from_json_file(&manifest)?;
-            let tx = tx::builder::create_transaction(&manifest, &settings)?;
-            println!("{}", tx.txid());
+        Action::MakeTx {
+            manifest: manifest_filename,
+        } => {
+            let manifest = tx::manifest::Manifest::from_json_file(&manifest_filename)?;
+            let psbt = tx::builder::create_psbt(&manifest, &settings)?;
+            // write the psbt to a file with the same base name as the manifest, but with a .psbt extension
+            let psbt_filename = manifest_filename.replace(".json", ".psbt");
+            let mut file = std::fs::File::create(&psbt_filename)?;
+            let base64_psbt = general_purpose::STANDARD.encode(psbt.serialize());
+            file.write_all(base64_psbt.as_bytes())?;
+            println!("Wrote psbt to {}", psbt_filename);
         }
-        Action::EstimateFee { manifest } => {
-            let manifest = tx::manifest::Manifest::from_json_file(&manifest)?;
+        Action::EstimateFee {
+            manifest: manifest_filename,
+        } => {
+            let manifest = tx::manifest::Manifest::from_json_file(&manifest_filename)?;
             let fee = tx::builder::estimate_fee(&manifest, &settings)?;
             println!("{}", fee);
         }
@@ -49,5 +60,3 @@ fn main() -> Result<()>{
 
     Ok(())
 }
-
-
