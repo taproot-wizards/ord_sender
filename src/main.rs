@@ -7,7 +7,6 @@ use anyhow::Result;
 use base64::engine::general_purpose;
 use base64::Engine;
 use clap::Parser;
-use std::default;
 use std::io::Write;
 
 #[derive(Parser)]
