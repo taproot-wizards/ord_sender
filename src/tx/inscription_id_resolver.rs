@@ -52,9 +52,12 @@ impl OrdServerInscriptionIdResolver {
 
 impl InscriptionIdResolver for OrdServerInscriptionIdResolver {
     fn resolve_inscription_id(&self, inscription_id: &str) -> Result<InscriptionInfo> {
-        let response: Value =
-            reqwest::blocking::get(format!("{}/inscriptions/{}", self.url, inscription_id))?
-                .json()?;
+        let client = reqwest::blocking::Client::new();
+        let response: Value = client
+            .get(&format!("{}/inscription/{}", self.url, inscription_id))
+            .header(reqwest::header::ACCEPT, "application/json")
+            .send()?
+            .json()?;
 
         // Extract the output_value and satpoint fields
         let output_value = response["output_value"]

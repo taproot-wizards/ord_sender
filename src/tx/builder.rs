@@ -16,6 +16,15 @@ pub(crate) fn create_psbt(manifest: &Manifest, settings: &Settings) -> Result<Ps
 
 pub(crate) fn estimate_fee(manifest: &Manifest, settings: &Settings) -> Result<Amount> {
     let mut transaction = make_transaction(manifest, settings)?;
+    if manifest.funding_outpoint.is_none() {
+        // push a dummy input to estimate the fee
+        transaction.input.push(bitcoin::TxIn {
+            previous_output: bitcoin::OutPoint::default(),
+            script_sig: Default::default(),
+            sequence: Sequence::MAX,
+            witness: Default::default(),
+        });
+    }
     let dummy_witness = settings.wallet_type.dummy_witness();
     for input in &mut transaction.input {
         input.witness = Witness::from(dummy_witness.clone());

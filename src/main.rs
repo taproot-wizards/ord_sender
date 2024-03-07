@@ -2,10 +2,12 @@ mod settings;
 mod tx;
 
 use crate::settings::Settings;
+use crate::tx::manifest::Manifest;
 use anyhow::Result;
 use base64::engine::general_purpose;
 use base64::Engine;
 use clap::Parser;
+use std::default;
 use std::io::Write;
 
 #[derive(Parser)]
@@ -19,6 +21,7 @@ struct Cli {
 
 #[derive(Parser)]
 enum Action {
+    Blank,
     MakeTx { manifest: String },
     EstimateFee { manifest: String },
 }
@@ -37,6 +40,13 @@ fn main() -> Result<()> {
     };
 
     match cli.action {
+        Action::Blank => {
+            // make a default manifest and write it to a file
+            let manifest: Manifest = Default::default();
+            let manifest_filename = "manifest.json";
+            manifest.to_json_file(manifest_filename)?;
+            println!("Wrote default manifest to {}", manifest_filename);
+        }
         Action::MakeTx {
             manifest: manifest_filename,
         } => {

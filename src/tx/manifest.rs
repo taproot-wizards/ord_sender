@@ -25,4 +25,23 @@ impl Manifest {
         let manifest: Self = serde_json::from_str(&manifest)?;
         Ok(manifest)
     }
+    pub(crate) fn to_json_file(&self, file_name: &str) -> Result<()> {
+        let manifest = serde_json::to_string_pretty(self)?;
+        std::fs::write(file_name, manifest)?;
+        Ok(())
+    }
+}
+
+impl Default for Manifest {
+    fn default() -> Self {
+        Self {
+            fee_rate: 1,
+            funding_outpoint: None,
+            change_address: "".to_string(),
+            transfers: vec![Transfer {
+                inscription_id: "".to_string(),
+                address: "".to_string(),
+            }],
+        }
+    }
 }

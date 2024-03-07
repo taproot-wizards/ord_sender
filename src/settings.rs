@@ -1,5 +1,7 @@
 use crate::tx::dummy_witness::WalletType;
-use crate::tx::inscription_id_resolver::{InscriptionIdResolver, StaticInscriptionIdResolver};
+use crate::tx::inscription_id_resolver::{
+    InscriptionIdResolver, OrdServerInscriptionIdResolver, StaticInscriptionIdResolver,
+};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
@@ -55,12 +57,12 @@ impl From<&IdResolverConfiguration> for Box<dyn InscriptionIdResolver> {
     fn from(config: &IdResolverConfiguration) -> Box<dyn InscriptionIdResolver> {
         match config {
             IdResolverConfiguration::Static { filename } => Box::new(
-                StaticInscriptionIdResolver::from_json_file(&filename)
+                StaticInscriptionIdResolver::from_json_file(filename)
                     .expect("Failed to load id resolver"),
             ),
-            IdResolverConfiguration::OrdServer { url } => {
-                unimplemented!()
-            }
+            IdResolverConfiguration::OrdServer { url } => Box::new(
+                OrdServerInscriptionIdResolver::new(url.as_ref().expect("url not provided")),
+            ),
         }
     }
 }
