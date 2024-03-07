@@ -42,7 +42,6 @@ fn main() -> Result<()> {
         } => {
             let manifest = tx::manifest::Manifest::from_json_file(&manifest_filename)?;
             let psbt = tx::builder::create_psbt(&manifest, &settings)?;
-            // write the psbt to a file with the same base name as the manifest, but with a .psbt extension
             let psbt_filename = manifest_filename.replace(".json", ".psbt");
             let mut file = std::fs::File::create(&psbt_filename)?;
             let base64_psbt = general_purpose::STANDARD.encode(psbt.serialize());

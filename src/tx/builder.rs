@@ -37,26 +37,16 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
     let mut outputs = Vec::new();
     let id_resolver: Box<dyn InscriptionIdResolver> = (&settings.id_resolver).into();
     for transfer in &manifest.transfers {
-        let outpoint = match transfer.outpoint {
-            Some(outpoint) => outpoint,
-            None => match &transfer.inscription_id {
-                Some(inscription_id) => id_resolver.resolve_inscription_id(inscription_id)?,
-                None => {
-                    return Err(anyhow::anyhow!(
-                        "You must provide either an outpoint or an inscription id"
-                    ))
-                }
-            },
-        };
+        let inscription_info = id_resolver.resolve_inscription_id(&transfer.inscription_id)?;
         let input = bitcoin::TxIn {
-            previous_output: outpoint,
+            previous_output: inscription_info.outpoint,
             script_sig: Default::default(),
             sequence: Sequence::MAX,
             witness: Default::default(),
         };
         let address = Address::from_str(&transfer.address)?.require_network(settings.network)?;
         let output = bitcoin::TxOut {
-            value: Amount::from_sat(transfer.amount),
+            value: Amount::from_sat(inscription_info.amount),
             script_pubkey: address.script_pubkey(),
         };
         debug!(
@@ -82,7 +72,7 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
 
     outputs.push(bitcoin::TxOut {
         value: Amount::from_sat(546), // add a dust-sized output to allow for future fee bumping
-        script_pubkey: Address::from_str(&manifest.anchor_address)?
+        script_pubkey: Address::from_str(&manifest.change_address)?
             .require_network(settings.network)?
             .script_pubkey(),
     });

@@ -6,19 +6,17 @@ use serde::{Deserialize, Serialize};
 pub(crate) struct Manifest {
     pub(crate) fee_rate: u64,
     pub(crate) funding_outpoint: Option<OutPoint>,
-    pub(crate) anchor_address: String,
+    /// address for change. there will always be at least 546 sats of change, so you can use it as an anchor for CPFP
+    pub(crate) change_address: String,
     pub(crate) transfers: Vec<Transfer>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub(crate) struct Transfer {
-    /// the inscripiton id of the ordinal to transfer. If not provided, you must provide the outpoint
-    pub(crate) inscription_id: Option<String>,
-    /// the outpoint of the ordinal to transfer. If not provided, you must provide an inscription id
-    pub(crate) outpoint: Option<OutPoint>,
+    /// the inscripiton id of the ordinal to transfer. Will be resolved to an outpoint when the transaction is built
+    pub(crate) inscription_id: String,
     /// The address to send the ordinal to
     pub(crate) address: String,
-    pub(crate) amount: u64,
 }
 
 impl Manifest {
