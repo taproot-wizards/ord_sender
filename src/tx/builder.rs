@@ -80,7 +80,7 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
     }
 
     outputs.push(bitcoin::TxOut {
-        value: Amount::from_sat(546), // add a dust-sized output to allow for future fee bumping
+        value: Amount::from_sat(1234), // add a small output to allow for future fee bumping
         script_pubkey: Address::from_str(&manifest.change_address)?
             .require_network(settings.network)?
             .script_pubkey(),
@@ -88,6 +88,14 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
 
     transaction.input = inputs;
     transaction.output = outputs;
+    
+    if manifest.funding_outpoint.is_some() {
+        assert_eq!(transaction.input.len(), transaction.output.len(), "must have the same number of inputs and outputs");
+    } else {
+        assert_eq!(transaction.input.len(), transaction.output.len() - 1, "must have one less output than inputs");
+    }
+    assert_eq!(manifest.transfers.len() + 1, transaction.output.len(), "must have the same number of transfers as outputs plus an anchor output for CPFP");
+    assert_eq!(transaction.output.last().unwrap().value, Amount::from_sat(1234), "last output must be a dust output for CPFP");
 
     Ok(transaction)
 }
