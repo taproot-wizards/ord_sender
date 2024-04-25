@@ -3,7 +3,7 @@ mod tx;
 
 use crate::settings::Settings;
 use crate::tx::manifest::Manifest;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use base64::engine::general_purpose;
 use base64::Engine;
 use clap::Parser;
@@ -28,13 +28,15 @@ enum Action {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let settings_path = cli.settings.clone().unwrap_or("settings.toml".to_string());
+    if !std::path::Path::new(&settings_path).exists() {
+        let settings = Settings::default();
+        println!("Writing default settings to {settings_path}");
+        settings::to_toml_file(&settings, &settings_path)?;
+    }
     let settings = match settings::from_toml_file(&settings_path) {
         Ok(settings) => settings,
-        Err(_) => {
-            let settings = Settings::default();
-            println!("Writing default settings to {settings_path}");
-            settings::to_toml_file(&settings, &settings_path)?;
-            settings
+        Err(err) => {
+            bail!("Error reading settings file: {}", err)
         }
     };
 
@@ -49,7 +51,7 @@ fn main() -> Result<()> {
         Action::MakeTx {
             manifest: manifest_filename,
         } => {
-            let manifest = tx::manifest::Manifest::from_json_file(&manifest_filename)?;
+            let manifest = Manifest::from_json_file(&manifest_filename)?;
             let psbt = tx::builder::create_psbt(&manifest, &settings)?;
             let psbt_filename = manifest_filename.replace(".json", ".psbt");
             let mut file = std::fs::File::create(&psbt_filename)?;
@@ -60,7 +62,7 @@ fn main() -> Result<()> {
         Action::EstimateFee {
             manifest: manifest_filename,
         } => {
-            let manifest = tx::manifest::Manifest::from_json_file(&manifest_filename)?;
+            let manifest = Manifest::from_json_file(&manifest_filename)?;
             let fee = tx::builder::estimate_fee(&manifest, &settings)?;
             println!("{}", fee);
         }

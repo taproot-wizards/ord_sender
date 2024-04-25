@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::str::FromStr;
+use log::debug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct InscriptionInfo {
@@ -52,6 +53,7 @@ impl OrdServerInscriptionIdResolver {
 
 impl InscriptionIdResolver for OrdServerInscriptionIdResolver {
     fn resolve_inscription_id(&self, inscription_id: &str) -> Result<InscriptionInfo> {
+        debug!("Resolving inscription_id: {}", inscription_id);
         let client = reqwest::blocking::Client::new();
         let response: Value = client
             .get(&format!("{}/inscription/{}", self.url, inscription_id))
@@ -60,7 +62,7 @@ impl InscriptionIdResolver for OrdServerInscriptionIdResolver {
             .json()?;
 
         // Extract the output_value and satpoint fields
-        let output_value = response["output_value"]
+        let output_value = response["value"]
             .as_u64()
             .ok_or_else(|| anyhow::anyhow!("output_value not found"))?;
         let satpoint = response["satpoint"]

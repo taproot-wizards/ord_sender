@@ -33,7 +33,10 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             network: bitcoin::Network::Regtest,
-            wallet_type: WalletType::SingleSigTaproot,
+            wallet_type: WalletType::MultiSigSegwit {
+                threshold: 2,
+                max: 3,
+            },
             id_resolver: Default::default(),
         }
     }
@@ -47,8 +50,8 @@ pub(crate) enum IdResolverConfiguration {
 
 impl Default for IdResolverConfiguration {
     fn default() -> Self {
-        Self::Static {
-            filename: "inscription_id_map.json".to_string(),
+        Self::OrdServer {
+            url: Some("http://localhost".to_string()),
         }
     }
 }
