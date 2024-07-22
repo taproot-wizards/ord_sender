@@ -31,7 +31,7 @@ pub(crate) fn estimate_fee(manifest: &Manifest, settings: &Settings) -> Result<A
     }
     let vsize = transaction.vsize();
     let fee_rate = manifest.fee_rate;
-    let fee = Amount::from_sat((vsize as u64 * fee_rate) + 546);
+    let fee = Amount::from_sat((vsize as u64 * fee_rate) + 1234);
     Ok(fee)
 }
 
