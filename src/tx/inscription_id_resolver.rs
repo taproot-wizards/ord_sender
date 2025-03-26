@@ -1,10 +1,10 @@
 use anyhow::Result;
 use bitcoin::OutPoint;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::str::FromStr;
-use log::debug;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct InscriptionInfo {

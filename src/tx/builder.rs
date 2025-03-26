@@ -88,14 +88,30 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
 
     transaction.input = inputs;
     transaction.output = outputs;
-    
+
     if manifest.funding_outpoint.is_some() {
-        assert_eq!(transaction.input.len(), transaction.output.len(), "must have the same number of inputs and outputs");
+        assert_eq!(
+            transaction.input.len(),
+            transaction.output.len(),
+            "must have the same number of inputs and outputs"
+        );
     } else {
-        assert_eq!(transaction.input.len(), transaction.output.len() - 1, "must have one less output than inputs");
+        assert_eq!(
+            transaction.input.len(),
+            transaction.output.len() - 1,
+            "must have one less output than inputs"
+        );
     }
-    assert_eq!(manifest.transfers.len() + 1, transaction.output.len(), "must have the same number of transfers as outputs plus an anchor output for CPFP");
-    assert_eq!(transaction.output.last().unwrap().value, Amount::from_sat(1234), "last output must be a dust output for CPFP");
+    assert_eq!(
+        manifest.transfers.len() + 1,
+        transaction.output.len(),
+        "must have the same number of transfers as outputs plus an anchor output for CPFP"
+    );
+    assert_eq!(
+        transaction.output.last().unwrap().value,
+        Amount::from_sat(1234),
+        "last output must be a dust output for CPFP"
+    );
 
     Ok(transaction)
 }
