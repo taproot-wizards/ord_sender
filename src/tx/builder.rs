@@ -4,13 +4,31 @@ use crate::tx::manifest::Manifest;
 use anyhow::Result;
 use bitcoin::absolute::LockTime;
 use bitcoin::transaction::Version;
-use bitcoin::{Address, Amount, Psbt, Sequence, Transaction, Witness};
+use bitcoin::{Address, Amount, Network, Psbt, Sequence, Transaction, Witness};
+use esplora_client::Builder;
 use log::debug;
 use std::str::FromStr;
 
 pub(crate) fn create_psbt(manifest: &Manifest, settings: &Settings) -> Result<Psbt> {
     let transaction = make_transaction(manifest, settings)?;
-    let psbt = Psbt::from_unsigned_tx(transaction)?;
+    let mut psbt = Psbt::from_unsigned_tx(transaction)?;
+
+    let url = match settings.network {
+        Network::Bitcoin => "https://taprootwizards.mempool.space/api",
+        Network::Testnet => "https://mempool.space/testnet/api",
+        Network::Signet => "https://mempool.space/signet/api",
+        Network::Regtest => "http:/localhost:6002/api",
+        _ => panic!("Unsupported network"),
+    };
+
+    let client = Builder::new(url).build_blocking();
+    for i in 0..psbt.inputs.len() {
+        let txin = &psbt.unsigned_tx.input[i];
+        let tx = client.get_tx_no_opt(&txin.previous_output.txid)
+            .map_err(|e| anyhow::anyhow!("Error getting previous tx {txin:?}: {e}"))?;
+        psbt.inputs[i].witness_utxo = Some(tx.output[txin.previous_output.vout as usize].clone());
+    }
+
     Ok(psbt)
 }
 
