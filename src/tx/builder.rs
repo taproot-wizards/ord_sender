@@ -4,13 +4,31 @@ use crate::tx::manifest::Manifest;
 use anyhow::Result;
 use bitcoin::absolute::LockTime;
 use bitcoin::transaction::Version;
-use bitcoin::{Address, Amount, Psbt, Sequence, Transaction, Witness};
+use bitcoin::{Address, Amount, Network, Psbt, Sequence, Transaction, Witness};
+use esplora_client::Builder;
 use log::debug;
 use std::str::FromStr;
 
 pub(crate) fn create_psbt(manifest: &Manifest, settings: &Settings) -> Result<Psbt> {
     let transaction = make_transaction(manifest, settings)?;
-    let psbt = Psbt::from_unsigned_tx(transaction)?;
+    let mut psbt = Psbt::from_unsigned_tx(transaction)?;
+
+    let url = match settings.network {
+        Network::Bitcoin => "https://taprootwizards.mempool.space/api",
+        Network::Testnet => "https://mempool.space/testnet/api",
+        Network::Signet => "https://mempool.space/signet/api",
+        Network::Regtest => "http:/localhost:6002/api",
+        _ => panic!("Unsupported network"),
+    };
+
+    let client = Builder::new(url).build_blocking();
+    for i in 0..psbt.inputs.len() {
+        let txin = &psbt.unsigned_tx.input[i];
+        let tx = client.get_tx_no_opt(&txin.previous_output.txid)
+            .map_err(|e| anyhow::anyhow!("Error getting previous tx {txin:?}: {e}"))?;
+        psbt.inputs[i].witness_utxo = Some(tx.output[txin.previous_output.vout as usize].clone());
+    }
+
     Ok(psbt)
 }
 
@@ -88,14 +106,30 @@ fn make_transaction(manifest: &Manifest, settings: &Settings) -> Result<Transact
 
     transaction.input = inputs;
     transaction.output = outputs;
-    
+
     if manifest.funding_outpoint.is_some() {
-        assert_eq!(transaction.input.len(), transaction.output.len(), "must have the same number of inputs and outputs");
+        assert_eq!(
+            transaction.input.len(),
+            transaction.output.len(),
+            "must have the same number of inputs and outputs"
+        );
     } else {
-        assert_eq!(transaction.input.len(), transaction.output.len() - 1, "must have one less output than inputs");
+        assert_eq!(
+            transaction.input.len(),
+            transaction.output.len() - 1,
+            "must have one less output than inputs"
+        );
     }
-    assert_eq!(manifest.transfers.len() + 1, transaction.output.len(), "must have the same number of transfers as outputs plus an anchor output for CPFP");
-    assert_eq!(transaction.output.last().unwrap().value, Amount::from_sat(1234), "last output must be a dust output for CPFP");
+    assert_eq!(
+        manifest.transfers.len() + 1,
+        transaction.output.len(),
+        "must have the same number of transfers as outputs plus an anchor output for CPFP"
+    );
+    assert_eq!(
+        transaction.output.last().unwrap().value,
+        Amount::from_sat(1234),
+        "last output must be a dust output for CPFP"
+    );
 
     Ok(transaction)
 }
